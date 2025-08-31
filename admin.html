@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务自由挂图 - 管理面板</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔧</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff7675, #d63031);
+            border: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            border: none;
+        }
+
+        .login-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .panel-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th, .data-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .data-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+        }
+
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .stats-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            opacity: 0.9;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .data-table {
+                font-size: 14px;
+            }
+
+            .data-table th, .data-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 管理面板</h1>
+            <p>财务自由挂图数据管理中心</p>
+            <div class="header-actions">
+                <a href="index.html" class="btn">📈 返回主页</a>
+                <button class="btn btn-success" onclick="initDatabase()" id="initDbBtn" style="display: none;">🗄️ 初始化数据库</button>
+                <button class="btn btn-danger" onclick="logout()" id="logoutBtn" style="display: none;">🚪 退出登录</button>
+            </div>
+        </div>
+
+        <!-- 登录界面 -->
+        <div class="login-container" id="loginContainer">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #2c3e50;">🔐 管理员登录</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="password">管理密码</label>
+                    <input type="password" id="password" placeholder="请输入管理密码" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">登录</button>
+            </form>
+            <div id="loginMessage"></div>
+        </div>
+
+        <!-- 管理面板主界面 -->
+        <div class="admin-panel" id="adminPanel">
+            <!-- 数据统计预览 -->
+            <div class="panel-section">
+                <h3 class="section-title">📊 数据统计</h3>
+                <div class="stats-preview" id="statsPreview">
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalRecords">0</div>
+                        <div class="stat-label">总记录数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="latestCapital">¥0</div>
+                        <div class="stat-label">最新资本</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgIncome">¥0</div>
+                        <div class="stat-label">平均收入</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgExpense">¥0</div>
+                        <div class="stat-label">平均支出</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据管理 -->
+            <div class="panel-section">
+                <h3 class="section-title">💾 数据管理</h3>
+                <div class="form-grid">
+                    <div>
+                        <h4>添加/编辑数据</h4>
+                        <form id="dataForm">
+                            <div class="form-group">
+                                <label for="yearMonth">年月</label>
+                                <input type="month" id="yearMonth" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="totalIncome">总收入 (¥)</label>
+                                <input type="number" id="totalIncome" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="totalExpense">总支出 (¥)</label>
+                                <input type="number" id="totalExpense" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="totalCapital">累计资本 (¥)</label>
+                                <input type="number" id="totalCapital" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="interestRate">长期利率 (%)</label>
+                                <input type="number" id="interestRate" step="0.01" min="0" max="20" value="4.0" required>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button type="submit" class="btn btn-primary">💾 保存数据</button>
+                                <button type="button" class="btn" onclick="clearForm()">🗑️ 清空表单</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div>
+                        <h4>数据预览</h4>
+                        <div id="tableLoading" class="loading" style="display: none;">正在加载数据</div>
+                        <div class="table-container">
+                            <table class="data-table" id="dataTable">
+                                <thead>
+                                    <tr>
+                                        <th>年月</th>
+                                        <th>收入</th>
+                                        <th>支出</th>
+                                        <th>资本</th>
+                                        <th>投资收入</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div id="dataMessage"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let adminToken = '';
+        let financialData = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkLoginStatus();
+            setupEventListeners();
+        });
+
+        // 检查登录状态
+        function checkLoginStatus() {
+            adminToken = localStorage.getItem('adminToken');
+            if (adminToken) {
+                showAdminPanel();
+                loadData();
+            } else {
+                showLoginForm();
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('dataForm').addEventListener('submit', handleDataSubmit);
+        }
+
+        // 显示登录表单
+        function showLoginForm() {
+            document.getElementById('loginContainer').style.display = 'block';
+            document.getElementById('adminPanel').classList.remove('active');
+            document.getElementById('initDbBtn').style.display = 'none';
+            document.getElementById('logoutBtn').style.display = 'none';
+        }
+
+        // 显示管理面板
+        function showAdminPanel() {
+            document.getElementById('loginContainer').style.display = 'none';
+            document.getElementById('adminPanel').classList.add('active');
+            document.getElementById('initDbBtn').style.display = 'inline-block';
+            document.getElementById('logoutBtn').style.display = 'inline-block';
+        }
+
+        // 处理登录
+        async function handleLogin(e) {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/admin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ password })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    adminToken = result.token;
+                    localStorage.setItem('adminToken', adminToken);
+                    showMessage('loginMessage', '登录成功！', 'success');
+                    setTimeout(() => {
+                        showAdminPanel();
+                        loadData();
+                    }, 1000);
+                } else {
+                    showMessage('loginMessage', result.error || '登录失败', 'error');
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                showMessage('loginMessage', '登录失败: ' + error.message, 'error');
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            adminToken = '';
+            localStorage.removeItem('adminToken');
+            showLoginForm();
+            document.getElementById('password').value = '';
+            showMessage('loginMessage', '已退出登录', 'success');
+        }
+
+        // 初始化数据库
+        async function initDatabase() {
+            if (!confirm('确定要初始化数据库吗？这将创建数据表并插入初始数据。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/init', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('dataMessage', result.message, 'success');
+                    loadData();
+                } else {
+                    showMessage('dataMessage', result.error || '初始化失败', 'error');
+                }
+            } catch (error) {
+                console.error('初始化数据库失败:', error);
+                showMessage('dataMessage', '初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 加载数据
+        async function loadData() {
+            try {
+                document.getElementById('tableLoading').style.display = 'flex';
+                
+                const response = await fetch('/api/financial-data');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                financialData = await response.json();
+                updateDataTable();
+                updateStatsPreview();
+                
+                document.getElementById('tableLoading').style.display = 'none';
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showMessage('dataMessage', '加载数据失败: ' + error.message, 'error');
+                document.getElementById('tableLoading').style.display = 'none';
+            }
+        }
+
+        // 更新数据表格
+        function updateDataTable() {
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = '';
+
+            financialData.forEach((data) => {
+                const row = tbody.insertRow();
+                const investmentIncome = calculateInvestmentIncome(data.total_capital, data.interest_rate);
+                
+                row.innerHTML = `
+                    <td>${data.year_month}</td>
+                    <td>¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${data.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${investmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>
+                        <button class="btn" onclick="editData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">编辑</button>
+                        <button class="btn btn-danger" onclick="deleteData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px;">删除</button>
+                    </td>
+                `;
+            });
+        }
+
+        // 更新统计预览
+        function updateStatsPreview() {
+            if (financialData.length === 0) {
+                document.getElementById('totalRecords').textContent = '0';
+                document.getElementById('latestCapital').textContent = '¥0';
+                document.getElementById('avgIncome').textContent = '¥0';
+                document.getElementById('avgExpense').textContent = '¥0';
+                return;
+            }
+
+            const totalRecords = financialData.length;
+            const latestData = financialData[financialData.length - 1];
+            const avgIncome = financialData.reduce((sum, data) => sum + data.total_income, 0) / totalRecords;
+            const avgExpense = financialData.reduce((sum, data) => sum + data.total_expense, 0) / totalRecords;
+
+            document.getElementById('totalRecords').textContent = totalRecords;
+            document.getElementById('latestCapital').textContent = '¥' + latestData.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('avgIncome').textContent = '¥' + avgIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('avgExpense').textContent = '¥' + avgExpense.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+        }
+
+        // 计算投资收入
+        function calculateInvestmentIncome(totalCapital, interestRate = 4.0) {
+            return (totalCapital * (interestRate / 100)) / 12;
+        }
+
+        // 处理数据提交
+        async function handleDataSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                yearMonth: document.getElementById('yearMonth').value,
+                totalIncome: parseFloat(document.getElementById('totalIncome').value),
+                totalExpense: parseFloat(document.getElementById('totalExpense').value),
+                totalCapital: parseFloat(document.getElementById('totalCapital').value),
+                interestRate: parseFloat(document.getElementById('interestRate').value)
+            };
+
+            try {
+                const response = await fetch('/api/financial-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('dataMessage', '数据保存成功！', 'success');
+                    clearForm();
+                    loadData();
+                } else {
+                    showMessage('dataMessage', result.error || '保存失败', 'error');
+                }
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                showMessage('dataMessage', '保存失败: ' + error.message, 'error');
+            }
+        }
+
+        // 编辑数据
+        function editData(yearMonth) {
+            const data = financialData.find(d => d.year_month === yearMonth);
+            if (data) {
+                document.getElementById('yearMonth').value = data.year_month;
+                document.getElementById('totalIncome').value = data.total_income;
+                document.getElementById('totalExpense').value = data.total_expense;
+                document.getElementById('totalCapital').value = data.total_capital;
+                document.getElementById('interestRate').value = data.interest_rate;
+            }
+        }
+
+        // 删除数据
+        async function deleteData(yearMonth) {
+            if (!confirm(`确定要删除 ${yearMonth} 的数据吗？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/financial-data?yearMonth=${yearMonth}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Admin-Token': adminToken
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('dataMessage', '数据删除成功！', 'success');
+                    loadData();
+                } else {
+                    showMessage('dataMessage', result.error || '删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除数据失败:', error);
+                showMessage('dataMessage', '删除失败: ' + error.message, 'error');
+            }
+        }
+
+        // 清空表单
+        function clearForm() {
+            document.getElementById('dataForm').reset();
+            document.getElementById('interestRate').value = '4.0';
+        }
+
+        // 显示消息
+        function showMessage(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

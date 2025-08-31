@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>财务自由挂图 - 追踪您的财务自由之路</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📈</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .header-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .chart-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 500px;
+            margin-bottom: 20px;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #74b9ff, #0984e3);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .crossover-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            display: none;
+        }
+
+        .crossover-indicator.active {
+            display: block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 300px;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ff7675;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .theory-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .theory-section h3 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .theory-section p {
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .theory-lines {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .theory-line {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid;
+        }
+
+        .theory-line.expense { border-left-color: #e74c3c; }
+        .theory-line.income { border-left-color: #3498db; }
+        .theory-line.investment { border-left-color: #2ecc71; }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .chart-wrapper {
+                height: 400px;
+            }
+            
+            .header-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 财务自由挂图</h1>
+            <p>基于《Your Money or Your Life》理念，观察三条线的交叉，追踪您的财务自由之路</p>
+            <div class="header-actions">
+                <a href="admin.html" class="btn">🔧 管理面板</a>
+                <button class="btn" onclick="refreshData()">🔄 刷新数据</button>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="chart-container">
+                <div class="crossover-indicator" id="crossoverIndicator">
+                    🎉 恭喜！您已达到财务自由交叉点
+                </div>
+                <h2 class="chart-title">财务自由进度图</h2>
+                <div id="chartLoading" class="loading">正在加载数据</div>
+                <div class="chart-wrapper" id="chartWrapper" style="display: none;">
+                    <canvas id="hangingChart"></canvas>
+                </div>
+                <div class="legend" id="chartLegend" style="display: none;">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #e74c3c;"></div>
+                        <span>月度总支出</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3498db;"></div>
+                        <span>月度总收入</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #2ecc71;"></div>
+                        <span>月度投资收入</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalSavings">¥0</div>
+                    <div class="stat-label">累计储蓄</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="monthsToFreedom">∞</div>
+                    <div class="stat-label">预计达到自由月数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="currentRate">0%</div>
+                    <div class="stat-label">当前储蓄率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="crossoverStatus">未达到</div>
+                    <div class="stat-label">交叉点状态</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgInvestmentIncome">¥0</div>
+                    <div class="stat-label">平均月投资收入</div>
+                </div>
+            </div>
+
+            <div class="theory-section">
+                <h3>💡 财务自由挂图理论</h3>
+                <p>这个图表基于《Your Money or Your Life》一书中的核心理念，通过观察三条关键曲线的变化趋势和交叉点，帮助您追踪财务自由的进展。</p>
+                
+                <div class="theory-lines">
+                    <div class="theory-line expense">
+                        <h4>🔴 月度总支出线</h4>
+                        <p>反映您的生活成本。通过节俭方法，这条线通常会下降并趋于稳定，决定了您实现财务自由所需的被动收入数额。</p>
+                    </div>
+                    <div class="theory-line income">
+                        <h4>🔵 月度总收入线</h4>
+                        <p>代表您通过工作换取的生命能量。收入线与支出线之间的垂直空白区域，就是您每月的储蓄（资本）。</p>
+                    </div>
+                    <div class="theory-line investment">
+                        <h4>🟢 月度投资收入线</h4>
+                        <p>最关键的一条线！由累计资本×长期利率÷12计算得出。当这条线向上穿越支出线时，您就达到了财务自由！</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let financialData = [];
+        let chart = null;
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+        });
+
+        // 从API加载数据
+        async function loadData() {
+            try {
+                showLoading(true);
+                const response = await fetch('/api/financial-data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                financialData = await response.json();
+                
+                if (financialData.length === 0) {
+                    showError('暂无数据，请先到管理面板添加财务数据。');
+                    return;
+                }
+                
+                initChart();
+                updateStats();
+                showLoading(false);
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showError('加载数据失败: ' + error.message + '。请检查网络连接或联系管理员。');
+                showLoading(false);
+            }
+        }
+
+        // 显示/隐藏加载状态
+        function showLoading(show) {
+            document.getElementById('chartLoading').style.display = show ? 'flex' : 'none';
+            document.getElementById('chartWrapper').style.display = show ? 'none' : 'block';
+            document.getElementById('chartLegend').style.display = show ? 'none' : 'flex';
+            document.getElementById('statsGrid').style.display = show ? 'none' : 'grid';
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.querySelector('.main-content').insertBefore(errorDiv, document.querySelector('.chart-container'));
+        }
+
+        // 计算月度投资收入
+        function calculateInvestmentIncome(totalCapital, interestRate = 4.0) {
+            return (totalCapital * (interestRate / 100)) / 12;
+        }
+
+        // 初始化图表
+        function initChart() {
+            const ctx = document.getElementById('hangingChart').getContext('2d');
+            
+            const labels = financialData.map(d => d.year_month);
+            const expenseData = financialData.map(d => d.total_expense);
+            const incomeData = financialData.map(d => d.total_income);
+            const investmentData = financialData.map(d => calculateInvestmentIncome(d.total_capital, d.interest_rate));
+
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: '月度总支出',
+                            data: expenseData,
+                            borderColor: '#e74c3c',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: false
+                        },
+                        {
+                            label: '月度总收入',
+                            data: incomeData,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: false
+                        },
+                        {
+                            label: '月度投资收入',
+                            data: investmentData,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0,0,0,0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            borderColor: '#fff',
+                            borderWidth: 1,
+                            cornerRadius: 10,
+                            displayColors: true,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ¥' + context.parsed.y.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0,0,0,0.1)',
+                                borderDash: [5, 5]
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '¥' + value.toLocaleString('zh-CN');
+                                },
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+
+            checkCrossover();
+        }
+
+        // 检查交叉点
+        function checkCrossover() {
+            if (financialData.length === 0) return;
+
+            const latestData = financialData[financialData.length - 1];
+            const investmentIncome = calculateInvestmentIncome(latestData.total_capital, latestData.interest_rate);
+            const crossover = investmentIncome >= latestData.total_expense;
+
+            const indicator = document.getElementById('crossoverIndicator');
+            if (crossover) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            if (financialData.length === 0) return;
+
+            const latestData = financialData[financialData.length - 1];
+            const totalSavings = latestData.total_capital;
+            const investmentIncome = calculateInvestmentIncome(totalSavings, latestData.interest_rate);
+            const savingsRate = latestData.total_income > 0 ? 
+                ((latestData.total_income - latestData.total_expense) / latestData.total_income * 100) : 0;
+            const crossover = investmentIncome >= latestData.total_expense;
+
+            // 计算平均投资收入
+            const avgInvestmentIncome = financialData.reduce((sum, data) => 
+                sum + calculateInvestmentIncome(data.total_capital, data.interest_rate), 0) / financialData.length;
+
+            document.getElementById('totalSavings').textContent = '¥' + totalSavings.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('currentRate').textContent = savingsRate.toFixed(1) + '%';
+            document.getElementById('crossoverStatus').textContent = crossover ? '已达到' : '未达到';
+            document.getElementById('avgInvestmentIncome').textContent = '¥' + avgInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+
+            // 计算达到自由的月数
+            if (!crossover && savingsRate > 0) {
+                const monthlyDeficit = latestData.total_expense - investmentIncome;
+                const monthlySavings = latestData.total_income - latestData.total_expense;
+                if (monthlySavings > 0) {
+                    const monthsToFreedom = Math.ceil(monthlyDeficit / (monthlySavings * (latestData.interest_rate / 100) / 12));
+                    document.getElementById('monthsToFreedom').textContent = monthsToFreedom > 0 ? monthsToFreedom : '∞';
+                } else {
+                    document.getElementById('monthsToFreedom').textContent = '∞';
+                }
+            } else {
+                document.getElementById('monthsToFreedom').textContent = crossover ? '0' : '∞';
+            }
+        }
+
+        // 刷新数据
+        async function refreshData() {
+            await loadData();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "financial-freedom-chart",
+  "version": "1.0.0",
+  "description": "基于 Cloudflare Pages + Functions + D1 的财务自由挂图系统",
+  "main": "index.html",
+  "scripts": {
+    "dev": "wrangler pages dev . --d1 DB=financial-freedom-db",
+    "deploy": "wrangler pages publish .",
+    "db:create": "wrangler d1 create financial-freedom-db",
+    "db:migrate": "wrangler d1 execute financial-freedom-db --file=./schema.sql",
+    "db:seed": "wrangler d1 execute financial-freedom-db --file=./seed.sql"
+  },
+  "keywords": [
+    "financial-freedom",
+    "personal-finance",
+    "cloudflare-pages",
+    "cloudflare-functions",
+    "d1-database",
+    "money-management",
+    "investment-tracking"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
