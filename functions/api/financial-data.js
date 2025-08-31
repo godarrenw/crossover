@@ -5,7 +5,7 @@ export async function onRequestGet(context) {
     
     // 获取所有财务数据，按年月排序
     const { results } = await DB.prepare(`
-      SELECT year_month, total_income, total_expense, total_capital, interest_rate, 
+      SELECT year_month, total_income, total_expense, total_capital, investment_income, interest_rate, 
              created_at, updated_at
       FROM financial_data 
       ORDER BY year_month ASC
@@ -37,7 +37,7 @@ export async function onRequestPost(context) {
     }
 
     const data = await context.request.json();
-    const { yearMonth, totalIncome, totalExpense, totalCapital, interestRate = 4.0 } = data;
+    const { yearMonth, totalIncome, totalExpense, totalCapital, investmentIncome = 0, interestRate = 4.0 } = data;
 
     // 验证必填字段
     if (!yearMonth || totalIncome === undefined || totalExpense === undefined || totalCapital === undefined) {
@@ -50,9 +50,9 @@ export async function onRequestPost(context) {
     // 插入或更新数据
     await DB.prepare(`
       INSERT OR REPLACE INTO financial_data 
-      (year_month, total_income, total_expense, total_capital, interest_rate) 
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(yearMonth, totalIncome, totalExpense, totalCapital, interestRate).run();
+      (year_month, total_income, total_expense, total_capital, investment_income, interest_rate) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(yearMonth, totalIncome, totalExpense, totalCapital, investmentIncome, interestRate).run();
 
     return new Response(JSON.stringify({ success: true, message: '数据保存成功' }), {
       headers: { 'Content-Type': 'application/json' }
@@ -80,7 +80,7 @@ export async function onRequestPut(context) {
     }
 
     const data = await context.request.json();
-    const { yearMonth, totalIncome, totalExpense, totalCapital, interestRate = 4.0 } = data;
+    const { yearMonth, totalIncome, totalExpense, totalCapital, investmentIncome = 0, interestRate = 4.0 } = data;
 
     // 验证必填字段
     if (!yearMonth) {
@@ -93,9 +93,9 @@ export async function onRequestPut(context) {
     // 更新数据
     const result = await DB.prepare(`
       UPDATE financial_data 
-      SET total_income = ?, total_expense = ?, total_capital = ?, interest_rate = ?, updated_at = CURRENT_TIMESTAMP
+      SET total_income = ?, total_expense = ?, total_capital = ?, investment_income = ?, interest_rate = ?, updated_at = CURRENT_TIMESTAMP
       WHERE year_month = ?
-    `).bind(totalIncome, totalExpense, totalCapital, interestRate, yearMonth).run();
+    `).bind(totalIncome, totalExpense, totalCapital, investmentIncome, interestRate, yearMonth).run();
 
     if (result.changes === 0) {
       return new Response(JSON.stringify({ error: '数据不存在' }), {

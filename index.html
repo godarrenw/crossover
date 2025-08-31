@@ -298,7 +298,11 @@
                     </div>
                     <div class="legend-item">
                         <div class="legend-color" style="background: #2ecc71;"></div>
-                        <span>月度投资收入</span>
+                        <span>真实投资收入</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f39c12;"></div>
+                        <span>无风险利息收入</span>
                     </div>
                 </div>
             </div>
@@ -306,7 +310,7 @@
             <div class="stats-grid" id="statsGrid" style="display: none;">
                 <div class="stat-card">
                     <div class="stat-value" id="totalSavings">¥0</div>
-                    <div class="stat-label">累计储蓄</div>
+                    <div class="stat-label">资产总额</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="monthsToFreedom">∞</div>
@@ -322,7 +326,11 @@
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="avgInvestmentIncome">¥0</div>
-                    <div class="stat-label">平均月投资收入</div>
+                    <div class="stat-label">平均真实投资收入</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avgRiskFreeIncome">¥0</div>
+                    <div class="stat-label">平均无风险收入</div>
                 </div>
             </div>
 
@@ -340,8 +348,12 @@
                         <p>代表您通过工作换取的生命能量。收入线与支出线之间的垂直空白区域，就是您每月的储蓄（资本）。</p>
                     </div>
                     <div class="theory-line investment">
-                        <h4>🟢 月度投资收入线</h4>
-                        <p>最关键的一条线！由累计资本×长期利率÷12计算得出。当这条线向上穿越支出线时，您就达到了财务自由！</p>
+                        <h4>🟢 真实投资收入线</h4>
+                        <p>显示您的实际投资盈亏情况。包括股票、基金等投资产品的真实收益，可能有盈有亏。</p>
+                    </div>
+                    <div class="theory-line" style="border-left-color: #f39c12;">
+                        <h4>🟠 无风险利息收入线</h4>
+                        <p>基于资产总额×无风险利率计算的理论收入。当这条线向上穿越支出线时，您就达到了财务自由！</p>
                     </div>
                 </div>
             </div>
@@ -401,8 +413,8 @@
             document.querySelector('.main-content').insertBefore(errorDiv, document.querySelector('.chart-container'));
         }
 
-        // 计算月度投资收入
-        function calculateInvestmentIncome(totalCapital, interestRate = 4.0) {
+        // 计算无风险利息收入
+        function calculateRiskFreeIncome(totalCapital, interestRate = 4.0) {
             return (totalCapital * (interestRate / 100)) / 12;
         }
 
@@ -413,7 +425,8 @@
             const labels = financialData.map(d => d.year_month);
             const expenseData = financialData.map(d => d.total_expense);
             const incomeData = financialData.map(d => d.total_income);
-            const investmentData = financialData.map(d => calculateInvestmentIncome(d.total_capital, d.interest_rate));
+            const realInvestmentData = financialData.map(d => d.investment_income || 0);
+            const riskFreeData = financialData.map(d => calculateRiskFreeIncome(d.total_capital, d.interest_rate));
 
             chart = new Chart(ctx, {
                 type: 'line',
@@ -443,10 +456,21 @@
                             fill: false
                         },
                         {
-                            label: '月度投资收入',
-                            data: investmentData,
+                            label: '真实投资收入',
+                            data: realInvestmentData,
                             borderColor: '#2ecc71',
                             backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            fill: false
+                        },
+                        {
+                            label: '无风险利息收入',
+                            data: riskFreeData,
+                            borderColor: '#f39c12',
+                            backgroundColor: 'rgba(243, 156, 18, 0.1)',
                             borderWidth: 3,
                             tension: 0.4,
                             pointRadius: 6,
@@ -524,8 +548,8 @@
             if (financialData.length === 0) return;
 
             const latestData = financialData[financialData.length - 1];
-            const investmentIncome = calculateInvestmentIncome(latestData.total_capital, latestData.interest_rate);
-            const crossover = investmentIncome >= latestData.total_expense;
+            const riskFreeIncome = calculateRiskFreeIncome(latestData.total_capital, latestData.interest_rate);
+            const crossover = riskFreeIncome >= latestData.total_expense;
 
             const indicator = document.getElementById('crossoverIndicator');
             if (crossover) {
@@ -540,24 +564,29 @@
             if (financialData.length === 0) return;
 
             const latestData = financialData[financialData.length - 1];
-            const totalSavings = latestData.total_capital;
-            const investmentIncome = calculateInvestmentIncome(totalSavings, latestData.interest_rate);
+            const totalAssets = latestData.total_capital; // 使用真实资产总额
+            const riskFreeIncome = calculateRiskFreeIncome(totalAssets, latestData.interest_rate);
             const savingsRate = latestData.total_income > 0 ? 
                 ((latestData.total_income - latestData.total_expense) / latestData.total_income * 100) : 0;
-            const crossover = investmentIncome >= latestData.total_expense;
+            const crossover = riskFreeIncome >= latestData.total_expense;
 
-            // 计算平均投资收入
-            const avgInvestmentIncome = financialData.reduce((sum, data) => 
-                sum + calculateInvestmentIncome(data.total_capital, data.interest_rate), 0) / financialData.length;
+            // 计算平均真实投资收入
+            const avgRealInvestmentIncome = financialData.reduce((sum, data) => 
+                sum + (data.investment_income || 0), 0) / financialData.length;
 
-            document.getElementById('totalSavings').textContent = '¥' + totalSavings.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            // 计算平均无风险收入
+            const avgRiskFreeIncome = financialData.reduce((sum, data) => 
+                sum + calculateRiskFreeIncome(data.total_capital, data.interest_rate), 0) / financialData.length;
+
+            document.getElementById('totalSavings').textContent = '¥' + totalAssets.toLocaleString('zh-CN', {minimumFractionDigits: 2});
             document.getElementById('currentRate').textContent = savingsRate.toFixed(1) + '%';
             document.getElementById('crossoverStatus').textContent = crossover ? '已达到' : '未达到';
-            document.getElementById('avgInvestmentIncome').textContent = '¥' + avgInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('avgInvestmentIncome').textContent = '¥' + avgRealInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('avgRiskFreeIncome').textContent = '¥' + avgRiskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
 
-            // 计算达到自由的月数
+            // 计算达到自由的月数（基于无风险收入）
             if (!crossover && savingsRate > 0) {
-                const monthlyDeficit = latestData.total_expense - investmentIncome;
+                const monthlyDeficit = latestData.total_expense - riskFreeIncome;
                 const monthlySavings = latestData.total_income - latestData.total_expense;
                 if (monthlySavings > 0) {
                     const monthsToFreedom = Math.ceil(monthlyDeficit / (monthlySavings * (latestData.interest_rate / 100) / 12));

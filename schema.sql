@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS financial_data (
     year_month TEXT NOT NULL UNIQUE,  -- 年月格式: 2024-08
     total_income REAL NOT NULL DEFAULT 0,     -- 总收入
     total_expense REAL NOT NULL DEFAULT 0,    -- 总支出
-    total_capital REAL NOT NULL DEFAULT 0,    -- 累计资本
+    total_capital REAL NOT NULL DEFAULT 0,    -- 累计资本（真实资产总额）
+    investment_income REAL NOT NULL DEFAULT 0, -- 真实投资收益
     interest_rate REAL NOT NULL DEFAULT 4.0,  -- 长期利率(%)
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

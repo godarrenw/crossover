@@ -350,6 +350,10 @@
                                 <input type="number" id="totalCapital" step="0.01" min="0" required>
                             </div>
                             <div class="form-group">
+                                <label for="investmentIncome">真实投资收入 (¥)</label>
+                                <input type="number" id="investmentIncome" step="0.01" placeholder="可为负数">
+                            </div>
+                            <div class="form-group">
                                 <label for="interestRate">长期利率 (%)</label>
                                 <input type="number" id="interestRate" step="0.01" min="0" max="20" value="4.0" required>
                             </div>
@@ -369,8 +373,9 @@
                                         <th>年月</th>
                                         <th>收入</th>
                                         <th>支出</th>
-                                        <th>资本</th>
-                                        <th>投资收入</th>
+                                        <th>资产总额</th>
+                                        <th>真实投资收入</th>
+                                        <th>无风险收入</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
@@ -528,14 +533,16 @@
 
             financialData.forEach((data) => {
                 const row = tbody.insertRow();
-                const investmentIncome = calculateInvestmentIncome(data.total_capital, data.interest_rate);
+                const riskFreeIncome = calculateRiskFreeIncome(data.total_capital, data.interest_rate);
+                const realInvestmentIncome = data.investment_income || 0;
                 
                 row.innerHTML = `
                     <td>${data.year_month}</td>
                     <td>¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>¥${data.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
-                    <td>¥${investmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${realInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${riskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>
                         <button class="btn" onclick="editData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">编辑</button>
                         <button class="btn btn-danger" onclick="deleteData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px;">删除</button>
@@ -565,8 +572,8 @@
             document.getElementById('avgExpense').textContent = '¥' + avgExpense.toLocaleString('zh-CN', {minimumFractionDigits: 2});
         }
 
-        // 计算投资收入
-        function calculateInvestmentIncome(totalCapital, interestRate = 4.0) {
+        // 计算无风险利息收入
+        function calculateRiskFreeIncome(totalCapital, interestRate = 4.0) {
             return (totalCapital * (interestRate / 100)) / 12;
         }
 
@@ -579,6 +586,7 @@
                 totalIncome: parseFloat(document.getElementById('totalIncome').value),
                 totalExpense: parseFloat(document.getElementById('totalExpense').value),
                 totalCapital: parseFloat(document.getElementById('totalCapital').value),
+                investmentIncome: parseFloat(document.getElementById('investmentIncome').value) || 0,
                 interestRate: parseFloat(document.getElementById('interestRate').value)
             };
 
@@ -615,6 +623,7 @@
                 document.getElementById('totalIncome').value = data.total_income;
                 document.getElementById('totalExpense').value = data.total_expense;
                 document.getElementById('totalCapital').value = data.total_capital;
+                document.getElementById('investmentIncome').value = data.investment_income || 0;
                 document.getElementById('interestRate').value = data.interest_rate;
             }
         }
@@ -651,6 +660,7 @@
         function clearForm() {
             document.getElementById('dataForm').reset();
             document.getElementById('interestRate').value = '4.0';
+            document.getElementById('investmentIncome').value = '';
         }
 
         // 显示消息
