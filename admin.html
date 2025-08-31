@@ -284,6 +284,7 @@
             <div class="header-actions">
                 <a href="index.html" class="btn">📈 返回主页</a>
                 <button class="btn btn-success" onclick="initDatabase()" id="initDbBtn" style="display: none;">🗄️ 初始化数据库</button>
+                <button class="btn" onclick="migrateDatabase()" id="migrateDbBtn" style="display: none; background: linear-gradient(135deg, #6c5ce7, #a29bfe);">🔄 数据库迁移</button>
                 <button class="btn btn-danger" onclick="logout()" id="logoutBtn" style="display: none;">🚪 退出登录</button>
             </div>
         </div>
@@ -422,6 +423,7 @@
             document.getElementById('loginContainer').style.display = 'block';
             document.getElementById('adminPanel').classList.remove('active');
             document.getElementById('initDbBtn').style.display = 'none';
+            document.getElementById('migrateDbBtn').style.display = 'none';
             document.getElementById('logoutBtn').style.display = 'none';
         }
 
@@ -430,6 +432,7 @@
             document.getElementById('loginContainer').style.display = 'none';
             document.getElementById('adminPanel').classList.add('active');
             document.getElementById('initDbBtn').style.display = 'inline-block';
+            document.getElementById('migrateDbBtn').style.display = 'inline-block';
             document.getElementById('logoutBtn').style.display = 'inline-block';
         }
 
@@ -501,6 +504,37 @@
             } catch (error) {
                 console.error('初始化数据库失败:', error);
                 showMessage('dataMessage', '初始化失败: ' + error.message, 'error');
+            }
+        }
+
+        // 迁移数据库
+        async function migrateDatabase() {
+            if (!confirm('确定要执行数据库迁移吗？这将添加新的字段并更新现有数据。')) {
+                return;
+            }
+
+            try {
+                showMessage('dataMessage', '正在执行数据库迁移...', 'success');
+                
+                const response = await fetch('/api/migrate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('dataMessage', result.message, 'success');
+                    loadData();
+                } else {
+                    showMessage('dataMessage', result.error || '迁移失败', 'error');
+                }
+            } catch (error) {
+                console.error('数据库迁移失败:', error);
+                showMessage('dataMessage', '迁移失败: ' + error.message, 'error');
             }
         }
 

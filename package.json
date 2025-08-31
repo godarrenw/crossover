@@ -8,7 +8,8 @@
     "deploy": "wrangler pages publish .",
     "db:create": "wrangler d1 create financial-freedom-db",
     "db:migrate": "wrangler d1 execute financial-freedom-db --file=./schema.sql",
-    "db:seed": "wrangler d1 execute financial-freedom-db --file=./seed.sql"
+    "db:seed": "wrangler d1 execute financial-freedom-db --file=./seed.sql",
+    "db:migrate-field": "wrangler d1 execute financial-freedom-db --file=./migrate.sql"
   },
   "keywords": [
     "financial-freedom",

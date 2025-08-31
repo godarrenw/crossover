@@ -123,7 +123,12 @@ wrangler pages deploy .
 - 创建数据表结构
 - 插入示例财务数据
 
-### 4. 开始使用
+### 4. 数据库迁移（如果是从旧版本升级）
+如果您之前部署过旧版本，需要点击 **"🔄 数据库迁移"** 按钮：
+- 添加新的 `investment_income` 字段
+- 更新现有数据包含真实投资收益
+
+### 5. 开始使用
 - **查看图表**: 访问 `https://your-project.pages.dev/`
 - **管理数据**: 访问 `https://your-project.pages.dev/admin.html`
 
@@ -199,9 +204,11 @@ wrangler d1 execute financial-freedom-db --command "DELETE FROM financial_data"
 - 检查 GitHub 仓库权限
 - 确认 Cloudflare Pages 项目配置
 
-#### 4. 数据加载失败
+#### 4. 数据加载失败 (HTTP 500 错误)
 - 检查 D1 数据库是否正常运行
 - 确认数据表是否已创建
+- **如果是从旧版本升级**：点击管理面板中的"🔄 数据库迁移"按钮
+- 检查数据库表结构是否包含 `investment_income` 字段
 
 ### 调试命令
 ```bash

@@ -3,20 +3,40 @@ export async function onRequestGet(context) {
   try {
     const { DB } = context.env;
     
-    // 获取所有财务数据，按年月排序
-    const { results } = await DB.prepare(`
-      SELECT year_month, total_income, total_expense, total_capital, investment_income, interest_rate, 
-             created_at, updated_at
-      FROM financial_data 
-      ORDER BY year_month ASC
-    `).all();
+    // 首先尝试检查表结构并获取数据
+    let results;
+    try {
+      // 尝试获取包含 investment_income 字段的数据
+      const queryResult = await DB.prepare(`
+        SELECT year_month, total_income, total_expense, total_capital, 
+               COALESCE(investment_income, 0) as investment_income, 
+               interest_rate, created_at, updated_at
+        FROM financial_data 
+        ORDER BY year_month ASC
+      `).all();
+      results = queryResult.results;
+    } catch (columnError) {
+      console.log('investment_income 字段不存在，使用兼容模式');
+      // 如果字段不存在，则使用默认值
+      const queryResult = await DB.prepare(`
+        SELECT year_month, total_income, total_expense, total_capital, 
+               0 as investment_income, 
+               interest_rate, created_at, updated_at
+        FROM financial_data 
+        ORDER BY year_month ASC
+      `).all();
+      results = queryResult.results;
+    }
 
     return new Response(JSON.stringify(results), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (error) {
     console.error('获取财务数据失败:', error);
-    return new Response(JSON.stringify({ error: '获取数据失败' }), {
+    return new Response(JSON.stringify({ 
+      error: '获取数据失败: ' + error.message,
+      details: error.toString()
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
