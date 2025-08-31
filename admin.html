@@ -162,6 +162,36 @@
             border-bottom: 1px solid #e0e0e0;
         }
 
+        .editable-cell {
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .editable-cell:hover {
+            background-color: #f8f9ff;
+        }
+
+        .editable-cell.editing {
+            padding: 0;
+            background-color: #fff;
+        }
+
+        .inline-input {
+            width: 100%;
+            border: 2px solid #4CAF50;
+            padding: 8px;
+            font-size: 14px;
+            background: white;
+            outline: none;
+        }
+
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 11px;
+            min-width: 28px;
+        }
+
         .data-table th {
             background: #f8f9fa;
             font-weight: 600;
@@ -313,16 +343,16 @@
                         <div class="stat-label">总记录数</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="latestCapital">¥0</div>
-                        <div class="stat-label">最新资本</div>
-                    </div>
-                    <div class="stat-card">
                         <div class="stat-value" id="avgIncome">¥0</div>
                         <div class="stat-label">平均收入</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-value" id="avgExpense">¥0</div>
                         <div class="stat-label">平均支出</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgRiskFreeIncome">¥0</div>
+                        <div class="stat-label">平均无风险收入</div>
                     </div>
                 </div>
             </div>
@@ -374,7 +404,6 @@
                                         <th>年月</th>
                                         <th>收入</th>
                                         <th>支出</th>
-                                        <th>资产总额</th>
                                         <th>真实投资收入</th>
                                         <th>无风险收入</th>
                                         <th>操作</th>
@@ -571,15 +600,14 @@
                 const realInvestmentIncome = data.investment_income || 0;
                 
                 row.innerHTML = `
-                    <td>${data.year_month}</td>
-                    <td>¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
-                    <td>¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
-                    <td>¥${data.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
-                    <td>¥${realInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="editable-cell" data-field="year_month" data-type="month">${data.year_month}</td>
+                    <td class="editable-cell" data-field="total_income" data-type="number">¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="editable-cell" data-field="total_expense" data-type="number">¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="editable-cell" data-field="investment_income" data-type="number">¥${realInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>¥${riskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>
-                        <button class="btn" onclick="editData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">编辑</button>
-                        <button class="btn btn-danger" onclick="deleteData('${data.year_month}')" style="padding: 5px 10px; font-size: 12px;">删除</button>
+                        <button class="btn btn-sm" onclick="enableInlineEdit(this, '${data.year_month}')" style="padding: 4px 8px; font-size: 11px; margin-right: 3px;">✏️</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteData('${data.year_month}')" style="padding: 4px 8px; font-size: 11px;">🗑️</button>
                     </td>
                 `;
             });
@@ -589,21 +617,23 @@
         function updateStatsPreview() {
             if (financialData.length === 0) {
                 document.getElementById('totalRecords').textContent = '0';
-                document.getElementById('latestCapital').textContent = '¥0';
                 document.getElementById('avgIncome').textContent = '¥0';
                 document.getElementById('avgExpense').textContent = '¥0';
+                document.getElementById('avgRiskFreeIncome').textContent = '¥0';
                 return;
             }
 
             const totalRecords = financialData.length;
-            const latestData = financialData[financialData.length - 1];
             const avgIncome = financialData.reduce((sum, data) => sum + data.total_income, 0) / totalRecords;
             const avgExpense = financialData.reduce((sum, data) => sum + data.total_expense, 0) / totalRecords;
+            const avgRiskFreeIncome = financialData.reduce((sum, data) => {
+                return sum + calculateRiskFreeIncome(data.total_capital, data.interest_rate);
+            }, 0) / totalRecords;
 
             document.getElementById('totalRecords').textContent = totalRecords;
-            document.getElementById('latestCapital').textContent = '¥' + latestData.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2});
             document.getElementById('avgIncome').textContent = '¥' + avgIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
             document.getElementById('avgExpense').textContent = '¥' + avgExpense.toLocaleString('zh-CN', {minimumFractionDigits: 2});
+            document.getElementById('avgRiskFreeIncome').textContent = '¥' + avgRiskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2});
         }
 
         // 计算无风险利息收入
@@ -688,6 +718,98 @@
                 console.error('删除数据失败:', error);
                 showMessage('dataMessage', '删除失败: ' + error.message, 'error');
             }
+        }
+
+        // 启用内联编辑
+        function enableInlineEdit(button, yearMonth) {
+            const row = button.closest('tr');
+            const cells = row.querySelectorAll('.editable-cell');
+            
+            // 找到对应的数据
+            const data = financialData.find(d => d.year_month === yearMonth);
+            if (!data) return;
+
+            // 保存原始按钮
+            const originalButton = button.outerHTML;
+            
+            // 将按钮改为保存/取消
+            button.outerHTML = `
+                <button class="btn btn-success btn-sm" onclick="saveInlineEdit(this, '${yearMonth}')" style="padding: 4px 8px; font-size: 11px; margin-right: 3px;">💾</button>
+                <button class="btn btn-secondary btn-sm" onclick="cancelInlineEdit(this, '${yearMonth}')" style="padding: 4px 8px; font-size: 11px;">❌</button>
+            `;
+
+            // 将单元格转换为输入框
+            cells.forEach(cell => {
+                const field = cell.dataset.field;
+                const type = cell.dataset.type;
+                let value = data[field];
+                
+                if (field === 'year_month') {
+                    cell.innerHTML = `<input type="month" class="inline-input" value="${value}" data-field="${field}">`;
+                } else if (type === 'number') {
+                    cell.innerHTML = `<input type="number" step="0.01" class="inline-input" value="${value}" data-field="${field}">`;
+                }
+                cell.classList.add('editing');
+            });
+        }
+
+        // 保存内联编辑
+        async function saveInlineEdit(button, yearMonth) {
+            const row = button.closest('tr');
+            const inputs = row.querySelectorAll('.inline-input');
+            
+            // 收集编辑后的数据
+            const updatedData = { yearMonth };
+            inputs.forEach(input => {
+                const field = input.dataset.field;
+                let value = input.value;
+                
+                if (field === 'year_month') {
+                    updatedData.yearMonth = value;
+                } else if (input.type === 'number') {
+                    updatedData[field] = parseFloat(value) || 0;
+                }
+            });
+
+            // 添加资产总额和利率（从原数据中获取）
+            const originalData = financialData.find(d => d.year_month === yearMonth);
+            updatedData.totalCapital = originalData.total_capital;
+            updatedData.interestRate = originalData.interest_rate;
+            
+            // 映射字段名
+            updatedData.totalIncome = updatedData.total_income;
+            updatedData.totalExpense = updatedData.total_expense;
+            updatedData.investmentIncome = updatedData.investment_income || 0;
+
+            try {
+                const response = await fetch('/api/financial-data', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Admin-Token': adminToken
+                    },
+                    body: JSON.stringify(updatedData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showMessage('dataMessage', '数据更新成功！', 'success');
+                    loadData(); // 重新加载数据
+                } else {
+                    showMessage('dataMessage', result.error || '更新失败', 'error');
+                    cancelInlineEdit(button, yearMonth);
+                }
+            } catch (error) {
+                console.error('更新数据失败:', error);
+                showMessage('dataMessage', '更新失败: ' + error.message, 'error');
+                cancelInlineEdit(button, yearMonth);
+            }
+        }
+
+        // 取消内联编辑
+        function cancelInlineEdit(button, yearMonth) {
+            loadData(); // 简单重新加载数据来取消编辑
         }
 
         // 清空表单
