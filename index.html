@@ -434,6 +434,14 @@
             loadData();
         });
 
+        // 页面卸载时清理图表
+        window.addEventListener('beforeunload', function() {
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+        });
+
         // 从API加载数据
         async function loadData() {
             try {
@@ -508,6 +516,12 @@
 
         // 初始化图表
         function initChart() {
+            // 如果已有图表实例，先销毁它
+            if (chart) {
+                chart.destroy();
+                chart = null;
+            }
+            
             const ctx = document.getElementById('hangingChart').getContext('2d');
             
             const labels = financialData.map(d => d.year_month);
@@ -680,7 +694,13 @@
 
         // 刷新数据
         async function refreshData() {
-            await loadData();
+            showLoading(true);
+            try {
+                await loadData();
+            } catch (error) {
+                console.error('刷新数据失败:', error);
+                showError('刷新数据失败: ' + error.message);
+            }
         }
     </script>
 </body>
