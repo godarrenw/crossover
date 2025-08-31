@@ -21,18 +21,23 @@ export async function onRequestGet(context) {
         `).all();
         results = queryResult.results;
       } else {
-        // 普通用户不能看到真实资产数据
+        // 普通用户不能看到真实资产数据，但需要看到基于真实资产计算的无风险收入
         const queryResult = await DB.prepare(`
-          SELECT year_month, total_income, total_expense, 
+          SELECT year_month, total_income, total_expense, total_capital,
                  COALESCE(investment_income, 0) as investment_income, 
                  interest_rate, created_at, updated_at
           FROM financial_data 
           ORDER BY year_month ASC
         `).all();
-        results = queryResult.results.map(row => ({
-          ...row,
-          total_capital: 0 // 隐藏真实资产
-        }));
+        results = queryResult.results.map(row => {
+          // 计算无风险收入但隐藏真实资产
+          const riskFreeIncome = (row.total_capital * (row.interest_rate / 100)) / 12;
+          return {
+            ...row,
+            total_capital: riskFreeIncome, // 用无风险收入替代真实资产
+            risk_free_income: riskFreeIncome // 添加专门的无风险收入字段
+          };
+        });
       }
     } catch (columnError) {
       console.log('investment_income 字段不存在，使用兼容模式');
@@ -47,10 +52,15 @@ export async function onRequestGet(context) {
       results = queryResult.results;
       
       if (!isAdmin) {
-        results = results.map(row => ({
-          ...row,
-          total_capital: 0 // 隐藏真实资产
-        }));
+        results = results.map(row => {
+          // 计算无风险收入但隐藏真实资产
+          const riskFreeIncome = (row.total_capital * (row.interest_rate / 100)) / 12;
+          return {
+            ...row,
+            total_capital: riskFreeIncome, // 用无风险收入替代真实资产
+            risk_free_income: riskFreeIncome // 添加专门的无风险收入字段
+          };
+        });
       }
     }
 

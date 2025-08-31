@@ -498,7 +498,7 @@
 
             financialData.forEach(data => {
                 const row = tbody.insertRow();
-                const riskFreeIncome = calculateRiskFreeIncome(data.total_capital, data.interest_rate);
+                const riskFreeIncome = data.risk_free_income || calculateRiskFreeIncome(data.total_capital, data.interest_rate);
                 const savingsRate = data.total_income > 0 ? 
                     ((data.total_income - data.total_expense) / data.total_income * 100) : 0;
                 const investmentIncome = data.investment_income || 0;
@@ -528,7 +528,7 @@
             const expenseData = financialData.map(d => d.total_expense);
             const incomeData = financialData.map(d => d.total_income);
             const realInvestmentData = financialData.map(d => d.investment_income || 0);
-            const riskFreeData = financialData.map(d => calculateRiskFreeIncome(d.total_capital, d.interest_rate));
+            const riskFreeData = financialData.map(d => d.risk_free_income || calculateRiskFreeIncome(d.total_capital, d.interest_rate));
 
             chart = new Chart(ctx, {
                 type: 'line',
@@ -647,7 +647,7 @@
             if (financialData.length === 0) return;
 
             const latestData = financialData[financialData.length - 1];
-            const riskFreeIncome = calculateRiskFreeIncome(latestData.total_capital, latestData.interest_rate);
+            const riskFreeIncome = latestData.risk_free_income || calculateRiskFreeIncome(latestData.total_capital, latestData.interest_rate);
             const crossover = riskFreeIncome >= latestData.total_expense;
 
             const indicator = document.getElementById('crossoverIndicator');
@@ -664,14 +664,14 @@
 
             const latestData = financialData[financialData.length - 1];
             const totalAssets = latestData.total_capital; // 使用真实资产总额
-            const riskFreeIncome = calculateRiskFreeIncome(totalAssets, latestData.interest_rate);
+            const riskFreeIncome = latestData.risk_free_income || calculateRiskFreeIncome(totalAssets, latestData.interest_rate);
             const savingsRate = latestData.total_income > 0 ? 
                 ((latestData.total_income - latestData.total_expense) / latestData.total_income * 100) : 0;
             const crossover = riskFreeIncome >= latestData.total_expense;
 
             // 计算平均无风险收入
             const avgRiskFreeIncome = financialData.reduce((sum, data) => 
-                sum + calculateRiskFreeIncome(data.total_capital, data.interest_rate), 0) / financialData.length;
+                sum + (data.risk_free_income || calculateRiskFreeIncome(data.total_capital, data.interest_rate)), 0) / financialData.length;
 
             document.getElementById('currentRate').textContent = savingsRate.toFixed(1) + '%';
             document.getElementById('crossoverStatus').textContent = crossover ? '已达到' : '未达到';
