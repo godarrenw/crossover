@@ -412,7 +412,9 @@
                                         <th>年月</th>
                                         <th>收入</th>
                                         <th>支出</th>
+                                        <th>真实总资产</th>
                                         <th>真实投资收入</th>
+                                        <th>利率(%)</th>
                                         <th>无风险收入</th>
                                         <th>操作</th>
                                     </tr>
@@ -615,7 +617,9 @@
                     <td class="editable-cell" data-field="year_month" data-type="month">${data.year_month}</td>
                     <td class="editable-cell" data-field="total_income" data-type="number">¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td class="editable-cell" data-field="total_expense" data-type="number">¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="editable-cell" data-field="total_capital" data-type="number">¥${data.total_capital.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td class="editable-cell" data-field="investment_income" data-type="number">¥${realInvestmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="editable-cell" data-field="interest_rate" data-type="number">${data.interest_rate}%</td>
                     <td>¥${riskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
                     <td>
                         <button class="btn btn-sm" onclick="enableInlineEdit(this, '${data.year_month}')" style="padding: 4px 8px; font-size: 11px; margin-right: 3px;">✏️</button>
@@ -783,15 +787,15 @@
                 }
             });
 
-            // 添加资产总额和利率（从原数据中获取）
-            const originalData = financialData.find(d => d.year_month === yearMonth);
-            updatedData.totalCapital = originalData.total_capital;
-            updatedData.interestRate = originalData.interest_rate;
-            
-            // 映射字段名
-            updatedData.totalIncome = updatedData.total_income;
-            updatedData.totalExpense = updatedData.total_expense;
-            updatedData.investmentIncome = updatedData.investment_income || 0;
+            // 映射字段名到API期望的格式
+            const apiData = {
+                yearMonth: updatedData.yearMonth || updatedData.year_month,
+                totalIncome: updatedData.total_income || 0,
+                totalExpense: updatedData.total_expense || 0,
+                totalCapital: updatedData.total_capital || 0,
+                investmentIncome: updatedData.investment_income || 0,
+                interestRate: updatedData.interest_rate || 4.0
+            };
 
             try {
                 const response = await fetch('/api/financial-data', {
@@ -800,7 +804,7 @@
                         'Content-Type': 'application/json',
                         'X-Admin-Token': adminToken
                     },
-                    body: JSON.stringify(updatedData)
+                    body: JSON.stringify(apiData)
                 });
 
                 const result = await response.json();
