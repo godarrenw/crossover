@@ -1,20 +1,39 @@
 // 财务数据API接口
 export async function onRequestGet(context) {
   try {
-    const { DB } = context.env;
+    const { DB, ADMIN_PASSWORD } = context.env;
+    
+    // 检查是否有管理员权限
+    const adminToken = context.request.headers.get('X-Admin-Token');
+    const isAdmin = adminToken && adminToken === ADMIN_PASSWORD;
     
     // 首先尝试检查表结构并获取数据
     let results;
     try {
-      // 尝试获取包含 investment_income 字段的数据
-      const queryResult = await DB.prepare(`
-        SELECT year_month, total_income, total_expense, total_capital, 
-               COALESCE(investment_income, 0) as investment_income, 
-               interest_rate, created_at, updated_at
-        FROM financial_data 
-        ORDER BY year_month ASC
-      `).all();
-      results = queryResult.results;
+      if (isAdmin) {
+        // 管理员可以看到所有数据包括真实资产
+        const queryResult = await DB.prepare(`
+          SELECT year_month, total_income, total_expense, total_capital, 
+                 COALESCE(investment_income, 0) as investment_income, 
+                 interest_rate, created_at, updated_at
+          FROM financial_data 
+          ORDER BY year_month ASC
+        `).all();
+        results = queryResult.results;
+      } else {
+        // 普通用户不能看到真实资产数据
+        const queryResult = await DB.prepare(`
+          SELECT year_month, total_income, total_expense, 
+                 COALESCE(investment_income, 0) as investment_income, 
+                 interest_rate, created_at, updated_at
+          FROM financial_data 
+          ORDER BY year_month ASC
+        `).all();
+        results = queryResult.results.map(row => ({
+          ...row,
+          total_capital: 0 // 隐藏真实资产
+        }));
+      }
     } catch (columnError) {
       console.log('investment_income 字段不存在，使用兼容模式');
       // 如果字段不存在，则使用默认值
@@ -26,6 +45,13 @@ export async function onRequestGet(context) {
         ORDER BY year_month ASC
       `).all();
       results = queryResult.results;
+      
+      if (!isAdmin) {
+        results = results.map(row => ({
+          ...row,
+          total_capital: 0 // 隐藏真实资产
+        }));
+      }
     }
 
     return new Response(JSON.stringify(results), {

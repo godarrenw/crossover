@@ -261,6 +261,48 @@
         .theory-line.investment { border-left-color: #10b981; }
         .theory-line.risk-free { border-left-color: #f59e0b; }
 
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 16px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 8px;
+            text-align: right;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table th:first-child,
+        .data-table td:first-child {
+            text-align: left;
+        }
+
+        .data-table th {
+            background-color: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #d1d5db;
+        }
+
+        .data-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .positive {
+            color: #10b981;
+        }
+
+        .negative {
+            color: #ef4444;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -346,27 +388,25 @@
                 </div>
             </div>
 
-            <div class="theory-section">
-                <h3>💡 财务自由挂图理论</h3>
-                <p>这个图表基于《Your Money or Your Life》一书中的核心理念，通过观察三条关键曲线的变化趋势和交叉点，帮助您追踪财务自由的进展。</p>
-                
-                <div class="theory-lines">
-                    <div class="theory-line expense">
-                        <h4>🔴 月度总支出线</h4>
-                        <p>反映您的生活成本。通过节俭方法，这条线通常会下降并趋于稳定，决定了您实现财务自由所需的被动收入数额。</p>
-                    </div>
-                    <div class="theory-line income">
-                        <h4>🔵 月度总收入线</h4>
-                        <p>代表您通过工作换取的生命能量。收入线与支出线之间的垂直空白区域，就是您每月的储蓄（资本）。</p>
-                    </div>
-                    <div class="theory-line investment">
-                        <h4>🟢 真实投资收入线</h4>
-                        <p>显示您的实际投资盈亏情况。包括股票、基金等投资产品的真实收益，可能有盈有亏。</p>
-                    </div>
-                    <div class="theory-line" style="border-left-color: #f39c12;">
-                        <h4>🟠 无风险利息收入线</h4>
-                        <p>基于资产总额×无风险利率计算的理论收入。当这条线向上穿越支出线时，您就达到了财务自由！</p>
-                    </div>
+            <!-- 月度数据表格 -->
+            <div class="chart-container">
+                <h2 class="chart-title">月度财务数据</h2>
+                <div class="table-wrapper">
+                    <table class="data-table" id="monthlyDataTable">
+                        <thead>
+                            <tr>
+                                <th>年月</th>
+                                <th>总收入</th>
+                                <th>总支出</th>
+                                <th>真实投资收入</th>
+                                <th>预期无风险收入</th>
+                                <th>储蓄率</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 数据将通过JavaScript动态填充 -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -413,6 +453,7 @@
                 
                 initChart();
                 updateStats();
+                updateDataTable();
                 showLoading(false);
             } catch (error) {
                 console.error('加载数据失败:', error);
@@ -440,6 +481,29 @@
         // 计算无风险利息收入
         function calculateRiskFreeIncome(totalCapital, interestRate = 4.0) {
             return (totalCapital * (interestRate / 100)) / 12;
+        }
+
+        // 更新数据表格
+        function updateDataTable() {
+            const tbody = document.querySelector('#monthlyDataTable tbody');
+            tbody.innerHTML = '';
+
+            financialData.forEach(data => {
+                const row = tbody.insertRow();
+                const riskFreeIncome = calculateRiskFreeIncome(data.total_capital, data.interest_rate);
+                const savingsRate = data.total_income > 0 ? 
+                    ((data.total_income - data.total_expense) / data.total_income * 100) : 0;
+                const investmentIncome = data.investment_income || 0;
+
+                row.innerHTML = `
+                    <td>${data.year_month}</td>
+                    <td>¥${data.total_income.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${data.total_expense.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="${investmentIncome >= 0 ? 'positive' : 'negative'}">¥${investmentIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td>¥${riskFreeIncome.toLocaleString('zh-CN', {minimumFractionDigits: 2})}</td>
+                    <td class="${savingsRate >= 0 ? 'positive' : 'negative'}">${savingsRate.toFixed(1)}%</td>
+                `;
+            });
         }
 
         // 初始化图表
@@ -557,10 +621,7 @@
                             }
                         }
                     },
-                    animation: {
-                        duration: 2000,
-                        easing: 'easeInOutQuart'
-                    }
+                    animation: false
                 }
             });
 
